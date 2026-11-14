@@ -26,7 +26,8 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
 const page = await context.newPage();
 const errors = [];
-page.on('pageerror', (e) => errors.push(e.message));
+let current = '';
+page.on('pageerror', (e) => errors.push(current + ': ' + e.message));
 
 const open = async (id) => {
 	await page.goto(`${base}?lesson=${id}`);
@@ -60,6 +61,28 @@ const pick_shape = async (key) => {
 };
 const lessons = {};
 const lesson = (id, fn) => { lessons[id] = fn; };
+
+/** Picks an option of a question on the task card, as the student does. */
+const choose = async (question, option) => {
+	await page.locator(`.edu-question[data-question="${question}"] input[value="${option}"]`).check();
+};
+
+lesson('inf6-08-pixels', async () => {
+	await page.mouse.move(...(await at(200, 250)));
+	for (let i = 0; i < 12 && (await page.evaluate(() => window.AppConfig.ZOOM)) < 8; i++) await page.keyboard.press('Control+Equal');
+	assert.ok((await page.evaluate(() => window.AppConfig.ZOOM)) >= 8, 'Ctrl+= zooms in');
+	await page.keyboard.press('Control+Digit0');
+	await choose('photo', 1);
+	await choose('logo', 1);
+	await choose('kind', 0);
+});
+
+lesson('inf6-08-formats', async () => {
+	await choose('logo', 1);
+	await choose('photo', 0);
+	await choose('svg', 1);
+	await choose('layers', 2);
+});
 
 lesson('inf6-09-new-poster', async () => {
 	await page.keyboard.press('Control+n');
@@ -118,6 +141,21 @@ lesson('inf6-10-recolor', async () => {
 	await layer_params({ params });
 });
 
+lesson('inf6-10-sunset', async () => {
+	assert.equal(await tool(), 'gradient');
+	await options({ color_1: '#f59e0b', color_2: '#4338ca' });
+	await drag(await at(400, 480), await at(400, 20));
+	await page.keyboard.press('Control+BracketLeft');
+});
+
+lesson('inf6-10-rainbow', async () => {
+	await pick_shape('bezier_curve');
+	await page.evaluate(() => { window.AppConfig.COLOR = '#dc2626'; });
+	await options({ size: 10 });
+	await drag(await at(120, 380), await at(120, 130));
+	await drag(await at(680, 380), await at(680, 130));
+});
+
 lesson('inf6-11-sun-behind', async () => {
 	await page.mouse.click(...(await at(560, 140)));
 	assert.equal(await page.evaluate(() => window.AppConfig.layer.name), 'Сонце');
@@ -144,6 +182,7 @@ lesson('inf6-11-title', async () => {
 // ── Run ─────────────────────────────────────────────────────────────
 let failed = 0;
 for (const [id, steps] of Object.entries(lessons)) {
+	current = id;
 	try {
 		await open(id);
 		assert.equal(await solved(), false, 'the start must not be solved');
@@ -160,6 +199,7 @@ for (const [id, steps] of Object.entries(lessons)) {
 }
 
 // Closed tools, menu items and keys do nothing.
+current = 'closed tools';
 try {
 	await open('inf6-09-flowerbed');
 	await page.mouse.click(...(await at(400, 50)));

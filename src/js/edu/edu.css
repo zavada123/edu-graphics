@@ -229,3 +229,26 @@ body.theme-dark {
 	font-weight: 400;
 	opacity: 0.9;
 }
+
+/* Questions with a choice of answers. */
+.edu-question {
+	margin: 0 0 10px;
+	padding: 6px 8px 8px;
+	border: 1px solid var(--border-color);
+	border-radius: 6px;
+}
+.edu-question legend {
+	padding: 0 4px;
+	font-weight: 600;
+}
+.edu-question label {
+	display: flex;
+	gap: 6px;
+	align-items: flex-start;
+	margin: 4px 0;
+	cursor: pointer;
+}
+.edu-question input {
+	margin-top: 3px;
+	accent-color: var(--edu-accent);
+}

@@ -31,6 +31,9 @@ const lesson = lesson_by_id(params.get('lesson') ?? '') ?? lesson_by_id('free');
 /** What the student did: tools used for drawing, files saved. Read by the checks. */
 const journal = [];
 let start_layers = [];
+/** The biggest zoom since the start of the task (1 is 100 %), and the zoom being drawn now. */
+let max_zoom = 1;
+let zooming = Promise.resolve();
 
 /** Runs before the editor builds its interface. */
 export function prepare() {
@@ -53,6 +56,10 @@ export function prepare() {
 	const first_tool = bar.find((t) => t.name === (lesson.manifest.tools ?? [])[0]) ?? bar.find((t) => t.name === 'select') ?? bar[0];
 	Helper.setCookie('active_tool', first_tool ? first_tool.name : 'select');
 
+	// The gradient goes to a solid second colour (miniPaint starts with it transparent, which puzzles children).
+	const gradient = config.TOOLS.find((t) => t.name === 'gradient');
+	if (gradient) gradient.attributes.alpha = 100;
+
 	// Tool bar: hidden tools are removed, the rest get the names and keys of the trainer.
 	config.TOOLS = config.TOOLS.filter((t) => policy.tool_state(t.name) !== STATES.hidden || t.visible === false);
 	for (const tool of config.TOOLS) {
@@ -73,10 +80,11 @@ export async function start() {
 	mark_tool_bar();
 	register_commands();
 	keep_journal();
+	watch_zoom();
 	own_keyboard();
 	guard_files();
-	await load_start();
 
+	// The card first: it can change the width of the work area, and the picture is fitted to that area.
 	const index = lessons.indexOf(lesson);
 	const next = lessons[index + 1];
 	const panel = mount_panel(document.querySelector('.sidebar_right'), {
@@ -95,8 +103,25 @@ export async function start() {
 			window.location.search = params.toString();
 		},
 	});
+	await load_start();
 	window.EduGraphics = { lesson, journal, snapshot, check: async () => run_checks(lesson.checks, await snapshot()), panel, actions: app.Actions };
 	post({ type: 'ready' });
+}
+
+/** Every zoom (keys, menu, wheel, the navigator) goes through GUI_preview.zoom. */
+function watch_zoom() {
+	const preview = app.GUI.GUI_preview;
+	const proto = Object.getPrototypeOf(preview);
+	const zoom = proto.zoom;
+	proto.zoom = async function (...args) {
+		// The zoom is set before the first await inside: read it at once, before another zoom can change it.
+		const done = zoom.apply(this, args);
+		zooming = done;
+		max_zoom = Math.max(max_zoom, config.ZOOM);
+		const result = await done;
+		max_zoom = Math.max(max_zoom, config.ZOOM);
+		return result;
+	};
 }
 
 function post(message) {
@@ -217,12 +242,25 @@ function guard_files() {
 async function load_start() {
 	const doc = build_document(lesson.start, paint_on_canvas);
 	await app.FileOpen.load_json(doc);
+	await images_ready();
 	// The starting picture is not the student's work: it cannot be undone and it is not in the journal.
 	app.State.action_history = [];
 	app.State.action_history_index = 0;
 	journal.length = 0;
 	start_layers = plain_layers(config.layers);
-	app.GUI.GUI_preview.zoom_auto && app.GUI.GUI_preview.zoom_auto();
+	// zoom_auto does not return its promise: wait for the zoom it starts, so the first click hits the picture.
+	app.GUI.GUI_preview.zoom_auto();
+	await zooming;
+	max_zoom = config.ZOOM;
+}
+
+/** The pixels of image layers load after load_json returns: a click before that would fill nothing. */
+async function images_ready(timeout = 3000) {
+	const loaded = () => config.layers.every((l) => l.type !== 'image' || (l.link && l.link.complete && l.link.naturalWidth > 0));
+	const until = Date.now() + timeout;
+	while (!loaded() && Date.now() < until) await new Promise((r) => setTimeout(r, 20));
+	config.need_render = true;
+	app.Layers.render();
 }
 
 /** The picture as one image, for the pixel checks. */
@@ -235,6 +273,8 @@ function flatten() {
 	return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
+const panel_answers = () => (window.EduGraphics && window.EduGraphics.panel ? window.EduGraphics.panel.answers() : {});
+
 export async function snapshot() {
 	return {
 		width: config.WIDTH,
@@ -243,6 +283,8 @@ export async function snapshot() {
 		start: { layers: start_layers },
 		journal: [...journal],
 		image: flatten(),
+		zoom: { now: config.ZOOM, max: Math.max(max_zoom, config.ZOOM) },
+		answers: panel_answers(),
 	};
 }
 

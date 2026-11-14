@@ -42,7 +42,103 @@ const house_outline = (ctx, w, h) => {
 
 const flower = (name, x, y) => ({ kind: 'shape', type: 'star', name, x, y, w: 70, h: 70, corners: 6, inner_radius: 55, fill: '#ec4899', stroke: '#9d174d', stroke_size: 3 });
 
+/** A little "photo" of the fair: soft colours and blurred edges, made of pixels. */
+const photo = (ctx) => {
+	const x = 40, y = 70, w = 330, h = 360;
+	ctx.save();
+	ctx.beginPath();
+	ctx.rect(x, y, w, h);
+	ctx.clip();
+	const sky = ctx.createLinearGradient(0, y, 0, y + h);
+	sky.addColorStop(0, '#7dd3fc');
+	sky.addColorStop(0.65, '#fde68a');
+	ctx.fillStyle = sky;
+	ctx.fillRect(x, y, w, h);
+	const sun = ctx.createRadialGradient(x + 230, y + 110, 5, x + 230, y + 110, 70);
+	sun.addColorStop(0, '#fff7ae');
+	sun.addColorStop(0.45, '#fbbf24');
+	sun.addColorStop(1, 'rgba(251, 191, 36, 0)');
+	ctx.fillStyle = sun;
+	ctx.fillRect(x, y, w, h);
+	ctx.filter = 'blur(2px)';
+	ctx.fillStyle = '#4d7c0f';
+	ctx.beginPath();
+	ctx.ellipse(x + 90, y + h, 200, 120, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.fillStyle = '#65a30d';
+	ctx.beginPath();
+	ctx.ellipse(x + 280, y + h + 20, 170, 110, 0, 0, Math.PI * 2);
+	ctx.fill();
+	// a tent of the fair
+	ctx.fillStyle = '#dc2626';
+	ctx.beginPath();
+	ctx.moveTo(x + 120, y + 210);
+	ctx.lineTo(x + 190, y + 290);
+	ctx.lineTo(x + 50, y + 290);
+	ctx.closePath();
+	ctx.fill();
+	ctx.restore();
+	ctx.strokeStyle = '#1f2937';
+	ctx.lineWidth = 3;
+	ctx.strokeRect(x, y, w, h);
+};
+
+const photo_and_logo = { width: W, height: H, layers: [
+	{ kind: 'fill', name: 'Тло', color: '#ffffff' },
+	{ kind: 'image', name: 'Фото', draw: photo },
+	{ kind: 'shape', type: 'star', name: 'Логотип', x: 470, y: 110, w: 260, h: 260, corners: 5, inner_radius: 45, fill: '#facc15', stroke: '#f97316', stroke_size: 6 },
+] };
+
 export const lessons = [
+	{
+		id: 'inf6-08-pixels',
+		passport: 'inf6-08',
+		grade: 6,
+		title: 'Пікселі чи формули?',
+		task: [
+			'Мирослава принесла для афіші фото ярмарку (ліворуч) і логотип-зірку (праворуч).',
+			'Збільш масштаб до 800 % або більше: Ctrl+= кілька разів або коліщатко миші. Масштаб видно на панелі «Навігатор».',
+			'Роздивись край фото і край зірки. Відповідай на запитання нижче.',
+		],
+		manifest: { tools: ['select'], hidden: ['effects/*', 'image/*'] },
+		start: photo_and_logo,
+		questions: [
+			{ id: 'photo', text: 'Із чого складається фото?', options: ['З формул: ліній і фігур', 'З маленьких квадратиків — пікселів', 'З літер і цифр'] },
+			{ id: 'logo', text: 'Що сталося з краєм зірки при збільшенні?', options: ['Розпався на квадратики', 'Лишився рівним і гладким', 'Зник'] },
+			{ id: 'kind', text: 'Яке зображення — растрове, а яке — векторне?', options: ['Фото растрове, зірка векторна', 'Фото векторне, зірка растрова', 'Обидва растрові'] },
+		],
+		checks: [
+			{ type: 'zoom', min: 8, text: 'Малюнок збільшено до 800 % або більше', hint: 'Натискай Ctrl+= або крути коліщатко миші над малюнком, доки на «Навігаторі» не буде 800 %.' },
+			{ type: 'answer', question: 'photo', correct: 1, text: 'Фото складається з пікселів', hint: 'Подивись на край фото при великому масштабі: що ти бачиш?' },
+			{ type: 'answer', question: 'logo', correct: 1, text: 'Край зірки лишився гладким', hint: 'Збільш зірку й подивись на її край: чи з\'явилися на ньому сходинки?' },
+			{ type: 'answer', question: 'kind', correct: 0, text: 'Растр і вектор розпізнано правильно', hint: 'Растрове зображення складається з пікселів, векторне — з фігур, які програма перемальовує за формулами.' },
+		],
+	},
+	{
+		id: 'inf6-08-formats',
+		passport: 'inf6-08',
+		grade: 6,
+		title: 'Який формат обрати?',
+		task: [
+			'Афішу ярмарку надрукують на великому білборді, а логотип — і на значку, і на банері.',
+			'Подумай, у якому форматі зберегти кожне зображення. Можеш знову збільшити фото й логотип.',
+			'Відповідай на запитання нижче.',
+		],
+		manifest: { tools: ['select'], hidden: ['effects/*', 'image/*'] },
+		start: photo_and_logo,
+		questions: [
+			{ id: 'logo', text: 'Логотип будуть збільшувати й зменшувати. Який формат кращий?', options: ['JPG', 'SVG (векторний)', 'BMP'] },
+			{ id: 'photo', text: 'Фото ярмарку для сайту. Який формат кращий?', options: ['JPG', 'SVG', 'TXT'] },
+			{ id: 'svg', text: 'Мирослава зберегла фото у форматі SVG. Чи стало воно векторним?', options: ['Так, тепер його можна збільшувати без сходинок', 'Ні, всередині файлу лишилися ті самі пікселі', 'Так, але тільки кольори'] },
+			{ id: 'layers', text: 'Афішу ще треба буде змінювати. Як зберегти її, щоб шари не злилися?', options: ['Як PNG', 'Як JPG', 'Як проєкт із шарами (JSON)'] },
+		],
+		checks: [
+			{ type: 'answer', question: 'logo', correct: 1, text: 'Для логотипа обрано SVG', hint: 'Векторне зображення можна збільшувати без втрати якості. Який із форматів векторний?' },
+			{ type: 'answer', question: 'photo', correct: 0, text: 'Для фото обрано JPG', hint: 'Фото — растрове зображення з плавними переходами кольорів. Для нього придумали стиснення JPG.' },
+			{ type: 'answer', question: 'svg', correct: 1, text: 'Фото в SVG не стає векторним', hint: 'Програма не знає, з яких фігур складається фото: у SVG-файл вона просто вкладає ті самі пікселі.' },
+			{ type: 'answer', question: 'layers', correct: 2, text: 'Афішу збережено з шарами', hint: 'PNG і JPG зливають усі шари в одну картинку. Шари зберігає лише проєкт («Файл → Зберегти як проєкт»).' },
+		],
+	},
 	{
 		id: 'inf6-09-new-poster',
 		passport: 'inf6-09',
@@ -191,6 +287,46 @@ export const lessons = [
 		checks: [
 			{ type: 'recolored', name: 'Зірка', match: { fill: 'red' }, text: 'Та сама зірка тепер червона', hint: 'Вибери шар «Зірка» і на панелі «Властивості шару» зміни «Колір заливки» на червоний.' },
 			{ type: 'layers', match: { type: 'star' }, min: 1, max: 1, text: 'На аркуші одна зірка', hint: 'Видали зайві зірки: вибери шар і натисни Delete.' },
+		],
+	},
+	{
+		id: 'inf6-10-sunset',
+		passport: 'inf6-10',
+		grade: 6,
+		title: 'Небо на заході сонця',
+		task: [
+			'Тарас хоче, щоб небо над горою світилося, як на заході сонця.',
+			'Візьми «Градієнт» (G). На панелі параметрів задай перший колір жовтий або помаранчевий, другий — синій або фіолетовий.',
+			'Протягни мишею по аркушу знизу вгору. Градієнт стане новим шаром.',
+			'Новий шар закрив гору: перемісти його нижче (Ctrl+[), щоб гора була попереду.',
+		],
+		manifest: { tools: ['gradient', 'select'], commands: ['layer/move.*'], hidden: ['effects/*', 'image/*'] },
+		start: { width: W, height: H, layers: [
+			{ kind: 'fill', name: 'Небо', color: '#ffffff' },
+			{ kind: 'shape', type: 'triangle', name: 'Гора', x: 120, y: 200, w: 560, h: 300, fill: '#334155', stroke: '#1e293b', stroke_size: 4 },
+		] },
+		checks: [
+			{ type: 'layers', match: { type: 'gradient', colors: [['yellow', 'orange', 'red'], ['blue', 'purple']] }, text: 'Небо — градієнт від теплого кольору до синього', hint: 'Інструментом «Градієнт» (G) задай кольори: один жовтий або помаранчевий, другий синій або фіолетовий, і протягни мишею.' },
+			{ type: 'in_front', match: { name: 'Гора' }, behind: { type: 'gradient' }, text: 'Гора попереду неба', hint: 'Шар градієнта лежить зверху. Вибери його і натисни Ctrl+[ («Шар → Упорядкувати → Перемістити нижче»).' },
+		],
+	},
+	{
+		id: 'inf6-10-rainbow',
+		passport: 'inf6-10',
+		grade: 6,
+		title: 'Веселка кривою',
+		task: [
+			'Над галявиною має бути веселка — плавна дуга, а не ламана.',
+			'Відкрий «Фігури» (U) і вибери «Крива (перо)». Колір — червоний, товщина на панелі параметрів — 8 або більше.',
+			'Натисни на лівому кінці дуги й потягни вгору: з\'явиться перша напрямна. Потім натисни на правому кінці й теж потягни вгору.',
+			'Якщо дуга не вдалася, інструментом «Переміщення» (V) перетягни кінці напрямних.',
+		],
+		manifest: { tools: ['select', 'shape'], shapes: ['bezier_curve'], hidden: ['effects/*', 'image/*'] },
+		start: { width: W, height: H, layers: [{ kind: 'image', name: 'Галявина', draw: meadow }] },
+		checks: [
+			{ type: 'curve', match: { stroke: 'red' }, min_span: 300, text: 'Червона крива від краю до краю галявини', hint: 'Кінці кривої мають стояти далеко один від одного: від лівого до правого краю галявини.' },
+			{ type: 'curve', match: { stroke: 'red' }, min_span: 300, min_bend: 60, bend: 'up', text: 'Крива вигнута дугою вгору', hint: 'Потягни обидві напрямні вгору: середина дуги має піднятися над кінцями.' },
+			{ type: 'curve', match: { stroke: 'red', min_stroke: 8 }, text: 'Дуга товста, як веселка', hint: 'Задай товщину 8 або більше на панелі параметрів перед малюванням.' },
 		],
 	},
 	{
