@@ -4,7 +4,10 @@
  */
 
 import config from './../../config.js';
-import menuDefinition from './../../config-menu.js';
+// EduProstir: the trainer's menu, filtered by the lesson (src/js/edu/menu.js).
+import menuDefinition from './../../edu/menu.js';
+import { LATER_HINT } from './../../edu/policy.js';
+import { notify_closed } from './../../edu/guard.js';
 import Tools_translate_class from './../../modules/tools/translate.js';
 
 /**
@@ -89,8 +92,8 @@ class GUI_menu_class {
 			`.trim();
 		} else {
 			return `
-				<li>
-					<a id="main_menu_${ level }_${ index }" role="menuitem" tabindex="-1" aria-haspopup="${ (!!definition.children) + '' }"
+				<li${ definition.edu_later ? ' class="edu-later" title="' + LATER_HINT + '"' : '' }>
+					<a id="main_menu_${ level }_${ index }" role="menuitem" tabindex="-1" aria-haspopup="${ (!!definition.children) + '' }"${ definition.edu_later ? ' aria-disabled="true"' : '' }
 						href="${ definition.href ? definition.href : 'javascript:void(0)' }"
 						target="${ definition.href ? '_blank' : '_self' }"
 						data-level="${ level }" data-index="${ index }">
@@ -298,6 +301,12 @@ class GUI_menu_class {
 
 		// Close the dropdown
 		this.close_child_dropdowns(0);
+
+		// EduProstir: a grey command explains that it comes later.
+		if (definition.edu_later) {
+			notify_closed('later');
+			return;
+		}
 
 		// Emit callback events for triggered links
 		if (definition.target) {

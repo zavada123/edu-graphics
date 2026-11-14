@@ -1,4 +1,7 @@
 import Dialog_class from './../../libs/popup.js';
+// EduProstir: the trainer's keys (src/js/edu/keymap.js), only those the lesson opens.
+import { shortcut_list } from './../../edu/keymap.js';
+import { can_run, can_use_tool } from './../../edu/guard.js';
 
 class Help_shortcuts_class {
 
@@ -8,35 +11,15 @@ class Help_shortcuts_class {
 
 	//shortcuts
 	shortcuts() {
-		var settings = {
-			title: 'Keyboard Shortcuts',
-			className: 'shortcuts',
-			params: [
-				{title: "F", value: 'Auto Adjust Colors'},
-				{title: "F3 / &#8984; + F", value: 'Search'},
-				{title: "Ctrl + C", value: 'Copy to Clipboard'},
-				{title: "D", value: 'Duplicate'},
-				{title: "S", value: 'Export'},
-				{title: "G", value: 'Grid on/off'},
-				{title: "I", value: 'Information'},
-				{title: "N", value: 'New layer'},
-				{title: "O", value: 'Open'},
-				{title: "CTRL + V", value: 'Paste'},
-				{title: "F10", value: 'Quick Load'},
-				{title: "F9", value: 'Quick Save'},
-				{title: "R", value: 'Resize'},
-				{title: "L", value: 'Rotate left'},
-				{title: "U", value: 'Ruler'},
-				{title: "Shift + S", value: 'Save As'},
-				{title: "CTRL + A", value: 'Select All'},
-				{title: "H", value: 'Shapes'},
-				{title: "T", value: 'Trim'},
-				{title: "CTRL + Z", value: 'Undo'},
-				{title: "Scroll up", value: 'Zoom in'},
-				{title: "Scroll down", value: 'Zoom out'},
-			],
-		};
-		this.POP.show(settings);
+		const { tools, commands } = shortcut_list();
+		const params = [
+			...tools.filter((t) => can_use_tool(t.tool)).map((t) => ({ title: t.keys, value: t.label })),
+			...commands.filter((c) => can_run(c.target)).map((c) => ({ title: c.keys, value: c.label })),
+			{ title: '[ і ]', value: 'Менший або більший пензель' },
+			{ title: 'Esc', value: 'Зняти виділення, скасувати дію' },
+			{ title: 'Коліщатко миші', value: 'Масштаб' },
+		];
+		this.POP.show({ title: 'Гарячі клавіші', className: 'shortcuts', params });
 	}
 
 }

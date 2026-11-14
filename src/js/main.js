@@ -23,8 +23,10 @@ import Base_search_class from './core/base-search.js';
 import File_open_class from './modules/file/open.js';
 import File_save_class from './modules/file/save.js';
 import * as Actions from './actions/index.js';
+// EduProstir: lesson, closed tools, journal and task card.
+import * as Edu from './edu/index.js';
 
-window.addEventListener('load', function (e) {
+window.addEventListener('load', async function (e) {
 	// Initiate app
 	var Layers = new Base_layers_class();
 	var Base_tools = new Base_tools_class(true);
@@ -52,6 +54,8 @@ window.addEventListener('load', function (e) {
 	window.FileSave = File_save;
 
 	// Render all
+	Edu.prepare();
 	GUI.init();
-	Layers.init();
+	await Layers.init();
+	await Edu.start();
 }, false);

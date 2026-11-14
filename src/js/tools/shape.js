@@ -1,4 +1,6 @@
 import app from './../app.js';
+import { can_use_tool } from './../edu/guard.js';
+import { SHAPES } from './../edu/policy.js';
 import config from './../config.js';
 import Base_tools_class from './../core/base-tools.js';
 import Base_layers_class from './../core/base-layers.js';
@@ -70,7 +72,7 @@ class Shape_class extends Base_tools_class {
 		}
 
 		var settings = {
-			title: 'Shapes',
+			title: 'Фігури',
 			className: 'wide',
 			on_load: function (params, popup) {
 				var node = document.createElement("div");
@@ -117,6 +119,11 @@ class Shape_class extends Base_tools_class {
 			var object = this.Base_gui.GUI_tools.tools_modules[i];
 			if (object.full_key.indexOf("shapes/") == -1 )
 				continue;
+			// EduProstir: only the shapes the lesson opens, with their Ukrainian names.
+			if (!can_use_tool(object.key))
+				continue;
+			if (SHAPES[object.key])
+				object = { ...object, title: SHAPES[object.key] };
 
 			list.push(object);
 		}

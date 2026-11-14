@@ -16,6 +16,7 @@ import Tools_translate_class from './../modules/tools/translate.js';
 import Tools_settings_class from './../modules/tools/settings.js';
 import Helper_class from './../libs/helpers.js';
 import alertify from './../../../node_modules/alertifyjs/build/alertify.min.js';
+import { can_run, notify_command } from './../edu/guard.js';
 
 var instance = null;
 
@@ -170,6 +171,12 @@ class Base_gui_class {
 			var module = parts[0];
 			var function_name = parts[1];
 			var param = object.parameter ??= null;
+
+			// EduProstir: a command the lesson has closed does not run.
+			if (!can_run(target)) {
+				notify_command(target);
+				return;
+			}
 
 			//call module
 			if (this.modules[module] == undefined) {

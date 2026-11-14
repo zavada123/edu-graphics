@@ -1,4 +1,5 @@
 import app from './../../app.js';
+import { get_file_name } from './../../edu/guard.js';
 import config from './../../config.js';
 import Base_layers_class from './../../core/base-layers.js';
 import Helper_class from './../../libs/helpers.js';
@@ -118,7 +119,8 @@ class File_save_class {
 			calc_size = true;
 		}
 
-		var file_name = config.layers[0].name;
+		// EduProstir: the lesson names the file.
+		var file_name = get_file_name() ?? config.layers[0].name;
 		var parts = file_name.split('.');
 		if (parts.length > 1)
 			file_name = parts[parts.length - 2];

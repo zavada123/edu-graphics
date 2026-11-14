@@ -1,4 +1,3 @@
-import config from './../../config.js';
 import Dialog_class from './../../libs/popup.js';
 
 class Help_about_class {
@@ -9,19 +8,15 @@ class Help_about_class {
 
 	//about
 	about() {
-		var email = 'www.viliusl@gmail.com';	
-		
+		// EduProstir: the trainer, with credit to the editor it is built on (MIT licence).
 		var settings = {
-			title: 'About',
+			title: 'Про програму',
 			params: [
-				{title: "", html: '<img style="width:64px;" class="about-logo" alt="" src="images/logo-colors.png" />'},
-				{title: "Name:", html: '<span class="about-name">miniPaint</span>'},
-				{title: "Version:", value: VERSION},
-				{title: "Description:", value: "Online image editor."},
-				{title: "Author:", value: 'ViliusL'},
-				{title: "Email:", html: '<a href="mailto:' + email + '">' + email + '</a>'},
-				{title: "GitHub:", html: '<a href="https://github.com/viliusle/miniPaint">https://github.com/viliusle/miniPaint</a>'},
-				{title: "Website:", html: '<a href="https://viliusle.github.io/miniPaint/">https://viliusle.github.io/miniPaint/</a>'},
+				{title: "Назва:", html: '<span class="about-name">Графічний редактор EduProstir</span>'},
+				{title: "Версія:", value: VERSION},
+				{title: "Опис:", value: "Навчальний тренажер графічного редактора для уроків інформатики."},
+				{title: "Основа:", html: 'miniPaint, автор ViliusL, ліцензія MIT: <a href="https://github.com/viliusle/miniPaint" target="_blank" rel="noopener">github.com/viliusle/miniPaint</a>'},
+				{title: "Код:", html: '<a href="https://github.com/zavada123/edu-graphics" target="_blank" rel="noopener">github.com/zavada123/edu-graphics</a>'},
 			],
 		};
 		this.POP.show(settings);

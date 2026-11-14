@@ -2,6 +2,7 @@ import app from './../app.js';
 import config from './../config.js';
 import { Base_action } from './base.js';
 import alertify from './../../../node_modules/alertifyjs/build/alertify.min.js';
+import { can_use_tool, notify_tool } from './../edu/guard.js';
 
 export class Activate_tool_action extends Base_action {
 	/**
@@ -17,6 +18,11 @@ export class Activate_tool_action extends Base_action {
 	}
 
 	async do() {
+		// EduProstir: a tool the lesson has closed does not open, whatever asked for it.
+		if (!can_use_tool(this.key)) {
+			notify_tool(this.key);
+			throw new Error('Tool is closed in this lesson: ' + this.key);
+		}
 		super.do();
 		const key = this.key;
 		this.old_key = app.GUI.GUI_tools.active_tool;
