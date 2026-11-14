@@ -4,9 +4,9 @@
 	"author": "zavada123",
 	"description": "Тренажер графічного редактора для уроків інформатики: шари, пензель, заливка, фігури, текст і завдання з перевіркою. Заснований на miniPaint.",
 	"scripts": {
-		"server": "webpack serve --mode development --env development --open",
-		"dev": "webpack --mode development",
-		"build": "webpack --mode production",
+		"server": "node scripts/svgedit.mjs && webpack serve --mode development --env development --open",
+		"dev": "node scripts/svgedit.mjs && webpack --mode development",
+		"build": "node scripts/svgedit.mjs && webpack --mode production",
 		"test": "node --no-warnings --test test/*.test.mjs",
 		"e2e": "node test/e2e.mjs",
 		"lib": "npm run build && node --no-warnings scripts/lib.mjs"
@@ -25,6 +25,7 @@
 		"css-loader": "^5.2.6",
 		"source-map-loader": "^3.0.0",
 		"style-loader": "^2.0.0",
+		"svgedit": "7.4.2",
 		"webpack": "^5.106.2",
 		"webpack-cli": "^7.0.2",
 		"webpack-dev-server": "^5.2.3"

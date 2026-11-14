@@ -50,12 +50,19 @@ class Fill_class extends Base_tools_class {
 		this.fill(mouse);
 	}
 
-	async fill(mouse) {
-		var params = this.getParams();
+	/**
+	 * EduProstir: fills run one after another. A fill reads the layer image, and the image of the fill before
+	 * it is saved asynchronously (IndexedDB): a quick second click read the old image and wiped the first fill.
+	 * `done` is the promise of the last fill; the trainer waits for it before a check.
+	 */
+	fill(mouse) {
+		const previous = this.done || Promise.resolve();
+		this.done = previous.then(() => this.fill_now(mouse)).catch((error) => console.error(error));
+		return this.done;
+	}
 
-		if(this.working == true){
-			return;
-		}
+	async fill_now(mouse) {
+		var params = this.getParams();
 
 		if (config.layer.type != 'image' && config.layer.type !== null) {
 			alertify.error('This layer must contain an image. Please convert it to raster to apply this tool.');
@@ -98,13 +105,12 @@ class Fill_class extends Base_tools_class {
 		color_to.a = config.ALPHA;
 
 		//change
-		this.working = true;
 		this.fill_general(ctx, config.WIDTH, config.HEIGHT,
 			mouse_x, mouse_y, color_to, params.power, params.anti_aliasing, params.contiguous);
 
 		if (config.layer.type != null) {
 			//update
-			app.State.do_action(
+			await app.State.do_action(
 				new app.Actions.Bundle_action('fill_tool', 'Fill Tool', [
 					new app.Actions.Update_layer_image_action(canvas)
 				])
@@ -120,7 +126,7 @@ class Fill_class extends Base_tools_class {
 			params.y = parseInt(canvas.dataset.y) || 0;
 			params.width = canvas.width;
 			params.height = canvas.height;
-			app.State.do_action(
+			await app.State.do_action(
 				new app.Actions.Bundle_action('fill_tool', 'Fill Tool', [
 					new app.Actions.Insert_layer_action(params)
 				])
@@ -129,7 +135,6 @@ class Fill_class extends Base_tools_class {
 
 		//prevent crash bug on touch screen - hard to explain and debug
 		await new Promise(r => setTimeout(r, 10));
-		this.working = false;
 	}
 
 	fill_general(context, W, H, x, y, color_to, sensitivity, anti_aliasing, contiguous = false) {

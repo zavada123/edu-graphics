@@ -32,7 +32,7 @@ jobs:
       - name: Collect the site
         run: |
           mkdir -p _site
-          cp -r index.html dist images _site/
+          cp -r index.html vector.html dist images svgedit components _site/
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:

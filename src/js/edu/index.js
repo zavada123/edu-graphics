@@ -16,7 +16,8 @@ import menu from './menu.js';
 import { all_met, run_checks } from './checks.js';
 import { can_run, can_use_tool, get_policy, notify_command, notify_tool, set_file_name, set_policy } from './guard.js';
 import { resolve_key } from './keymap.js';
-import { lesson_by_id, lessons } from './lessons.js';
+import { catalog, catalog_lesson, next_of, page_of } from './catalog.js';
+import { lesson_by_id } from './lessons.js';
 import { mount_panel } from './panel.js';
 import { Policy, STATES, TOOLS, LATER_HINT } from './policy.js';
 import { build_document, paint_on_canvas } from './scene.js';
@@ -35,8 +36,18 @@ let start_layers = [];
 let max_zoom = 1;
 let zooming = Promise.resolve();
 
-/** Runs before the editor builds its interface. */
+/**
+ * Runs before the editor builds its interface.
+ *
+ * @returns {boolean} false when the lesson belongs to the vector editor and the page is leaving for it
+ */
 export function prepare() {
+	// A lesson of the vector editor opened here (an old link, the lesson list): go to that editor.
+	const asked = catalog_lesson(params.get('lesson') ?? '');
+	if (asked && page_of(asked) !== 'index.html') {
+		window.location.replace(page_of(asked) + window.location.search);
+		return false;
+	}
 	const policy = new Policy(lesson.manifest);
 	set_policy(policy);
 	set_file_name(lesson.file ?? (lesson.free ? 'малюнок' : lesson.title));
@@ -73,6 +84,7 @@ export function prepare() {
 	menu.splice(0, menu.length, ...filtered);
 
 	document.title = lesson.free ? 'Графічний редактор' : `${lesson.title} · Графічний редактор`;
+	return true;
 }
 
 /** Runs after the editor has built its interface and its first empty document. */
@@ -85,13 +97,11 @@ export async function start() {
 	guard_files();
 
 	// The card first: it can change the width of the work area, and the picture is fitted to that area.
-	const index = lessons.indexOf(lesson);
-	const next = lessons[index + 1];
 	const panel = mount_panel(document.querySelector('.sidebar_right'), {
 		lesson,
-		lessons,
+		lessons: catalog,
 		embedded,
-		next: next && !next.free ? next : undefined,
+		next: next_of(lesson),
 		on_check: async () => {
 			const results = run_checks(lesson.checks, await snapshot());
 			post({ type: 'checked', solved: all_met(results), results: results.map((r) => ({ ok: r.ok, text: r.text })) });
@@ -100,7 +110,7 @@ export async function start() {
 		on_reset: () => window.location.reload(),
 		on_pick: (id) => {
 			params.set('lesson', id);
-			window.location.search = params.toString();
+			window.location.assign(page_of(catalog_lesson(id) ?? lesson) + '?' + params.toString());
 		},
 	});
 	await load_start();
@@ -276,6 +286,9 @@ function flatten() {
 const panel_answers = () => (window.EduGraphics && window.EduGraphics.panel ? window.EduGraphics.panel.answers() : {});
 
 export async function snapshot() {
+	// A fill still saving its image would be missing from the picture (tools/fill.js).
+	const fill = app.GUI.GUI_tools.tools_modules.fill;
+	if (fill && fill.object && fill.object.done) await fill.object.done;
 	return {
 		width: config.WIDTH,
 		height: config.HEIGHT,

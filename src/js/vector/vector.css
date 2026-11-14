@@ -1,0 +1,53 @@
+/* EduProstir, vector mode: SVG-Edit on the left, the task card on the right, in the colours of the raster editor. */
+
+html {
+	font-size: 10px;
+}
+body.edu-vector-page {
+	--text-color: #eef0f3;
+	--text-color-muted: #b8bec8;
+	--button-background-color: #353b44;
+	--button-border-radius: 4px;
+	--input-background-color: #1d2126;
+	--input-text-color: #eef0f3;
+	--input-border-color: #111317;
+	--input-border-radius: 4px;
+	--border-color: #4b5563;
+	--edu-accent: #2563eb;
+	margin: 0;
+	font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	color: var(--text-color);
+	background: #3b4049;
+}
+
+.edu-vector {
+	display: flex;
+	height: 100vh;
+	height: 100dvh;
+}
+.edu-vector #container {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: 100%;
+}
+.edu-vector-side {
+	flex: 0 0 280px;
+	overflow-y: auto;
+	background: #2c3139;
+	border-left: 1px solid #22262c;
+}
+.edu-vector-side .edu-task {
+	font-size: 1.4rem;
+}
+
+@media (max-width: 760px) {
+	.edu-vector {
+		flex-direction: column;
+	}
+	.edu-vector-side {
+		flex: 0 0 auto;
+		max-height: 40vh;
+		border-left: 0;
+		border-top: 1px solid #22262c;
+	}
+}

@@ -2,12 +2,14 @@ var webpack = require('webpack');
 var path = require('path');
 
 module.exports = {
-	entry: [
-		'./src/js/main.js',
-	],
+	// bundle.js: the raster editor (index.html); vector.js: the vector mode on SVG-Edit (vector.html).
+	entry: {
+		bundle: './src/js/main.js',
+		vector: './src/js/vector/main.js',
+	},
 	output: {
 		path: path.resolve(__dirname, 'dist'),
-		filename: 'bundle.js',
+		filename: '[name].js',
 		publicPath: '/dist/'
 	},
 	resolve: {

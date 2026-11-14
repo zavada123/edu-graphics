@@ -10,6 +10,9 @@ import menu, { menu_commands } from '../src/js/edu/menu.js';
 import { Policy, SHAPES, STATES, TOOLS } from '../src/js/edu/policy.js';
 import { build_document } from '../src/js/edu/scene.js';
 import { paint_of, plain_layers } from '../src/js/edu/snapshot.js';
+import { catalog, next_of, page_of } from '../src/js/edu/catalog.js';
+import { vector_lessons, VECTOR_TOOLS } from '../src/js/vector/lessons.js';
+import { layers_of, paint_ref, path_info } from '../src/js/vector/svg.js';
 
 // ── Colours ─────────────────────────────────────────────────────────
 
@@ -342,4 +345,90 @@ test('gradient colours and the shape of a curve', () => {
 	// A curve still being drawn has no points yet.
 	const [draft] = plain_layers([{ id: 1, order: 1, type: 'bezier_curve', x: 0, y: 0, params: { size: 4 }, color: '#ff0000', data: { start: { x: 1, y: 1 }, cp1: { x: 2, y: 2 }, cp2: { x: null, y: null }, end: { x: null, y: null } } }]);
 	assert.equal(draft.curve, null);
+});
+
+// ── Vector mode (vector.html) ───────────────────────────────────────
+
+
+test('path segments and visibly bent curves', () => {
+	assert.deepEqual(path_info('M 400 80 L 520 340 L 280 340 Z'), { nodes: 2, curves: 0 });
+	// A "curve" of SVG-Edit with its control points on the chord is still straight.
+	assert.deepEqual(path_info('M 400 80 L 520 340 C 440 340 360 340 280 340 L 400 80 z'), { nodes: 3, curves: 0 });
+	assert.deepEqual(path_info('M 400 80 C 500 167 540 253 520 340 C 500 427 360 430 280 340 L 400 80 z'), { nodes: 3, curves: 2 });
+	assert.deepEqual(path_info('m0 0 c 0 50 100 50 100 0 q 50 -50 100 0'), { nodes: 2, curves: 2 }, 'relative commands');
+	assert.deepEqual(path_info('M0,0 10,0 10,10 z'), { nodes: 2, curves: 0 }, 'pairs after a move are lines');
+	assert.deepEqual(path_info('M0 0 C 0 50 100 50 100 0 100 -50 200 -50 200 0'), { nodes: 2, curves: 2 }, 'one letter, two curves');
+	assert.deepEqual(path_info(''), { nodes: 0, curves: 0 });
+});
+
+test('paint attributes: colour, none, gradient and the default', () => {
+	assert.deepEqual(paint_ref('#ff0000', null), { kind: 'color', value: '#ff0000' });
+	assert.deepEqual(paint_ref('none', '#000000'), { kind: 'none' });
+	assert.deepEqual(paint_ref('url(#svg_7)', null), { kind: 'url', id: 'svg_7' });
+	assert.deepEqual(paint_ref('url("#g1")', null), { kind: 'url', id: 'g1' });
+	assert.deepEqual(paint_ref(null, '#000000'), { kind: 'color', value: '#000000' }, 'SVG fills black by default');
+	assert.deepEqual(paint_ref(undefined, null), { kind: 'none' }, 'and draws no outline');
+});
+
+/** A plain description of an SVG element, as the walk of the drawing makes it. */
+const el = (over) => ({ id: 'svg_1', tag: 'circle', name: '', box: { x: 0, y: 0, w: 10, h: 10 }, visible: true, fill: '#ffffff',
+	stroke: '#94a3b8', stroke_width: 3, text: null, d: null, gradient: null, groups: [], ...over });
+
+test('vector layers: types, gradients, groups and drawing order', () => {
+	const layers = layers_of([
+		el({ id: 'g', tag: 'g', fill: '#000000' }),
+		el({ id: 'a', name: 'Низ', groups: ['g'] }),
+		el({ id: 'b', tag: 'ellipse', gradient: { kind: 'radial', colors: ['#ffffff', '#ff0000'] }, groups: ['g'] }),
+		el({ id: 'p', tag: 'path', d: 'M0 0 C 0 50 100 50 100 0', stroke: null }),
+	]);
+	assert.deepEqual(layers.map((l) => l.type), ['group', 'ellipse', 'ellipse', 'path']);
+	assert.deepEqual(layers.map((l) => l.index), [1, 2, 3, 4]);
+	assert.equal(layers[0].fill, null, 'a group has no paint of its own');
+	assert.equal(layers[2].gradient, 'radial');
+	assert.deepEqual(layers[2].colors, ['#ffffff', '#ff0000']);
+	assert.equal(layers[3].curves, 1);
+	assert.equal(layers[3].stroke_size, 0);
+	assert.ok(layer_matches(layers[2], { gradient: 'radial', colors: [['white', 'yellow'], ['red', 'orange']] }));
+	assert.ok(!layer_matches(layers[2], { gradient: 'linear' }));
+	assert.ok(layer_matches(layers[3], { min_curves: 1 }) && !layer_matches(layers[3], { min_curves: 2 }));
+});
+
+test('a group check counts the shapes inside, at any depth', () => {
+	const snapshot = (groups) => ({ layers: layers_of([
+		el({ id: 'outer', tag: 'g' }),
+		el({ id: 'inner', tag: 'g', groups: ['outer'] }),
+		el({ id: 'a', groups: groups[0] }),
+		el({ id: 'b', groups: groups[1] }),
+		el({ id: 'c', groups: groups[2] }),
+	]) });
+	const check = { type: 'group', members: { type: 'ellipse', fill: 'white' }, min: 3, text: 't', hint: 'h' };
+	assert.equal(run_checks([check], snapshot([['outer'], ['outer', 'inner'], ['outer']]))[0].ok, true);
+	assert.equal(run_checks([check], snapshot([['outer'], ['outer'], []]))[0].ok, false, 'one ball is outside');
+	assert.equal(run_checks([{ ...check, max: 2 }], snapshot([['outer'], ['outer'], ['outer']]))[0].ok, false);
+});
+
+test('vector lessons are complete and the start is not solved', () => {
+	for (const l of vector_lessons) {
+		assert.equal(l.editor, 'vector', l.id);
+		assert.ok(l.title && l.task.length > 0 && l.checks.length > 0, l.id);
+		for (const t of l.manifest.tools ?? []) assert.ok(VECTOR_TOOLS.includes(t), `${l.id}: unknown tool ${t}`);
+		for (const c of l.checks) {
+			assert.ok([...CHECK_TYPES, 'group'].includes(c.type), `${l.id}: ${c.type}`);
+			assert.ok(c.text && c.hint, `${l.id}: text and hint`);
+		}
+		assert.match(l.start.svg, /^<svg width="800" height="500"/);
+		assert.equal((l.start.svg.match(/<g class="layer">/g) ?? []).length, 2, `${l.id}: the background and the work layer`);
+	}
+});
+
+test('the catalog: both editors by passport, free drawing last, the page of each lesson', () => {
+	assert.equal(new Set(catalog.map((l) => l.id)).size, catalog.length, 'unique ids across the editors');
+	assert.equal(catalog.length, lessons.length + vector_lessons.length);
+	const passports = catalog.filter((l) => !l.free).map((l) => l.passport);
+	assert.deepEqual(passports, [...passports].sort(), 'grouped by passport in textbook order');
+	assert.equal(catalog[catalog.length - 1].id, 'free');
+	assert.equal(page_of(catalog.find((l) => l.id === 'inf6-11-snowman')), 'vector.html');
+	assert.equal(page_of(catalog.find((l) => l.id === 'inf6-09-flowerbed')), 'index.html');
+	assert.equal(next_of(catalog.find((l) => l.id === 'inf6-10-rainbow')).id, 'inf6-10-ball', 'the raster lessons lead into the vector ones');
+	assert.equal(next_of(catalog.find((l) => l.id === 'inf6-11-fence')), undefined, 'free drawing is not a next task');
 });
