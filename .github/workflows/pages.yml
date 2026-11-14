@@ -27,6 +27,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: lib/lessons.json matches the lessons
+        run: node --no-warnings scripts/lib.mjs && git diff --exit-code lib/lessons.json
       - name: Collect the site
         run: |
           mkdir -p _site

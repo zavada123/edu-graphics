@@ -135,6 +135,16 @@ window.addEventListener('message', (event) => {
 
 The checks run in the browser. Server-side grading of the action log is planned for the integration stage.
 
+### As a package
+
+`lib/` holds the built trainer, so a site can install the package without building it:
+
+```bash
+pnpm add github:zavada123/edu-graphics#<commit>
+```
+
+Serve `node_modules/edu-graphics/lib/` as a folder of your site (for example `/graphics-app/`) and open `/graphics-app/?lesson=<id>&embed=1` in an iframe. `edu-graphics/lessons.json` lists the lessons (`id`, `passport`, `grade`, `title`, `task`) for a catalog page. After a change of the trainer run `npm run lib` and commit `lib/`.
+
 ## Development
 
 ```bash
