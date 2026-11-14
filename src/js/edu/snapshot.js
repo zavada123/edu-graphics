@@ -47,6 +47,25 @@ export function paint_of(layer) {
 	return { fill: null, stroke: null, stroke_size: 0 };
 }
 
+/** The two colours of a gradient layer, or null. */
+function colors_of(layer) {
+	if (layer.type !== 'gradient' || !layer.params) return null;
+	// `alpha` is the opacity of the second colour, in %: an almost transparent end is no colour.
+	const alpha = layer.params.alpha === undefined ? 100 : Number(layer.params.alpha);
+	return [visible_color(layer.params.color_1), alpha >= 50 ? visible_color(layer.params.color_2) : null];
+}
+
+/** The points of a finished Bézier curve on the canvas, or null while it is drawn. */
+function curve_of(layer) {
+	if (layer.type !== 'bezier_curve' || !layer.data) return null;
+	const d = layer.data;
+	if (!d.start || !d.cp1 || !d.cp2 || !d.end || [d.start, d.cp1, d.cp2, d.end].some((p) => p.x === null || p.y === null)) return null;
+	const x = Number(layer.x) || 0;
+	const y = Number(layer.y) || 0;
+	const at = (p) => ({ x: x + p.x, y: y + p.y });
+	return { start: at(d.start), cp1: at(d.cp1), cp2: at(d.cp2), end: at(d.end) };
+}
+
 /**
  * One layer for the checks. `index` is the place in the stack: 0 is the bottom layer.
  */
@@ -64,6 +83,8 @@ export function plain_layer(layer, index) {
 		...paint_of(layer),
 		text: layer.type === 'text' ? text_of(layer) : null,
 		corners: layer.params && layer.params.corners !== undefined ? Number(layer.params.corners) : null,
+		colors: colors_of(layer),
+		curve: curve_of(layer),
 	};
 }
 

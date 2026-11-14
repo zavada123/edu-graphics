@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { color_family } from '../src/js/edu/colors.js';
-import { all_met, count_pixels, evenly_spaced, layer_matches, run_checks } from '../src/js/edu/checks.js';
+import { all_met, colors_ok, count_pixels, curve_shape, evenly_spaced, layer_matches, run_checks } from '../src/js/edu/checks.js';
 import { parse_shortcut, resolve_key } from '../src/js/edu/keymap.js';
 import { lessons } from '../src/js/edu/lessons.js';
 import menu, { menu_commands } from '../src/js/edu/menu.js';
@@ -236,7 +236,7 @@ test('menu shortcuts, native keys, passes and blocks', () => {
 
 // ── Lessons ─────────────────────────────────────────────────────────
 
-const CHECK_TYPES = ['layers', 'recolored', 'in_front', 'above', 'inside', 'aligned', 'spaced', 'canvas', 'pixels', 'pixels_center', 'used', 'saved'];
+const CHECK_TYPES = ['layers', 'recolored', 'in_front', 'above', 'inside', 'aligned', 'spaced', 'canvas', 'pixels', 'pixels_center', 'used', 'saved', 'curve', 'zoom', 'answer'];
 
 test('every lesson is complete and consistent', () => {
 	const ids = new Set();
@@ -253,6 +253,12 @@ test('every lesson is complete and consistent', () => {
 			assert.ok(CHECK_TYPES.includes(c.type), `${l.id}: ${c.type}`);
 			assert.ok(c.text && c.hint, `${l.id}: text and hint`);
 			if (c.type === 'used' && c.kind === 'tool') assert.ok(p.can_use_tool(c.name), `${l.id}: the tool ${c.name} must be open`);
+			if (c.type === 'answer') {
+				const q = (l.questions ?? []).find((x) => x.id === c.question);
+				assert.ok(q, `${l.id}: no question ${c.question}`);
+				assert.ok(c.correct >= 0 && c.correct < q.options.length, `${l.id}: the right option of ${c.question}`);
+			}
+			if (c.type === 'curve') assert.ok(p.shape_on('bezier_curve'), `${l.id}: the curve must be open`);
 		}
 		const doc = build_document(l.start, () => 'data:image/png;base64,');
 		assert.equal(doc.layers.length, l.start.layers.length);
@@ -266,7 +272,7 @@ test('no lesson is solved at the start', () => {
 		const layers = plain_layers(doc.layers);
 		// The picture of the start is unknown here; pixel checks fail without it, which is the point:
 		// the layer and journal checks must fail on the start too.
-		const s = { width: doc.info.width, height: doc.info.height, layers, start: { layers }, journal: [], image: null };
+		const s = { width: doc.info.width, height: doc.info.height, layers, start: { layers }, journal: [], image: null, zoom: { now: 1, max: 1 }, answers: {} };
 		assert.equal(all_met(run_checks(l.checks, s)), false, l.id);
 	}
 });
@@ -293,6 +299,47 @@ test('a reference solution passes the layer checks of each vector lesson', () =>
 	const xs = [100, 220, 340, 460, 580];
 	assert.ok(all_met(solve('inf6-11-flowers-row', (ls) => ls.map((x) => (x.type === 'star' ? { ...x, x: xs[Number(x.name.slice(-1)) - 1], y: 250 } : x)))));
 
+	const gradient = { id: 9, order: 9, type: 'gradient', name: 'Gradient #9', x: 0, y: 0, width: 800, height: 500, params: { color_1: '#f59e0b', color_2: '#4338ca', radial: false } };
+	assert.equal(all_met(solve('inf6-10-sunset', (ls) => [...ls, gradient])), false, 'the gradient on top hides the mountain');
+	assert.ok(all_met(solve('inf6-10-sunset', (ls) => [ls[0], { ...gradient, order: 2 }, { ...ls[1], order: 3 }])));
+	const faded = { ...gradient, order: 2, params: { ...gradient.params, alpha: 0 } };
+	assert.equal(all_met(solve('inf6-10-sunset', (ls) => [ls[0], faded, { ...ls[1], order: 3 }])), false, 'a transparent second colour is no blue');
+
+	const rainbow = { id: 9, order: 9, type: 'bezier_curve', name: 'Bezier', x: 0, y: 0, width: null, height: null, color: '#ef4444', params: { size: 10 },
+		data: { start: { x: 120, y: 380 }, cp1: { x: 120, y: 120 }, cp2: { x: 680, y: 120 }, end: { x: 680, y: 380 } } };
+	assert.ok(all_met(solve('inf6-10-rainbow', (ls) => [...ls, rainbow])));
+	const sagging = { ...rainbow, data: { ...rainbow.data, cp1: { x: 120, y: 480 }, cp2: { x: 680, y: 480 } } };
+	assert.equal(all_met(solve('inf6-10-rainbow', (ls) => [...ls, sagging])), false, 'a dip down is not a rainbow');
+
 	const title = { id: 9, order: 9, type: 'text', name: 'Text #9', x: 200, y: 120, width: 420, height: 60, params: {}, data: [[{ text: 'ярмарок  добра ', meta: { stroke_size: 2, stroke_color: '#1f2937' } }]] };
 	assert.ok(all_met(solve('inf6-11-title', (ls) => [...ls, title])));
+});
+
+test('answers to questions and the zoom of the task', () => {
+	const by = (id) => lessons.find((l) => l.id === id);
+	const answer = (id, answers, max = 1) => {
+		const l = by(id);
+		const layers = plain_layers(build_document(l.start, () => '').layers);
+		return run_checks(l.checks, { width: 800, height: 500, layers, start: { layers }, journal: [], image: null, zoom: { now: 1, max }, answers });
+	};
+	assert.ok(all_met(answer('inf6-08-pixels', { photo: 1, logo: 1, kind: 0 }, 8)));
+	assert.equal(all_met(answer('inf6-08-pixels', { photo: 1, logo: 1, kind: 0 }, 4)), false, 'not zoomed enough');
+	assert.equal(all_met(answer('inf6-08-pixels', { photo: 0, logo: 1, kind: 0 }, 8)), false, 'a wrong answer');
+	assert.ok(all_met(answer('inf6-08-formats', { logo: 1, photo: 0, svg: 1, layers: 2 })));
+	assert.equal(answer('inf6-08-formats', { logo: 1 }).filter((r) => r.ok).length, 1, 'unanswered questions are not met');
+});
+
+test('gradient colours and the shape of a curve', () => {
+	assert.ok(colors_ok([['yellow', 'orange'], 'blue'], ['#2563eb', '#f59e0b']));
+	assert.ok(!colors_ok([['yellow', 'orange'], 'blue'], ['#f59e0b', '#facc15']));
+	assert.ok(!colors_ok(['yellow', 'blue'], null));
+	const arch = curve_shape({ start: { x: 0, y: 100 }, cp1: { x: 0, y: 0 }, cp2: { x: 200, y: 0 }, end: { x: 200, y: 100 } });
+	assert.equal(arch.span, 200);
+	assert.equal(arch.bend, 75);
+	assert.equal(arch.up, true);
+	const straight = curve_shape({ start: { x: 0, y: 0 }, cp1: { x: 50, y: 0 }, cp2: { x: 150, y: 0 }, end: { x: 200, y: 0 } });
+	assert.equal(straight.bend, 0);
+	// A curve still being drawn has no points yet.
+	const [draft] = plain_layers([{ id: 1, order: 1, type: 'bezier_curve', x: 0, y: 0, params: { size: 4 }, color: '#ff0000', data: { start: { x: 1, y: 1 }, cp1: { x: 2, y: 2 }, cp2: { x: null, y: null }, end: { x: null, y: null } } }]);
+	assert.equal(draft.curve, null);
 });

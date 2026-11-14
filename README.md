@@ -28,13 +28,16 @@ The student-facing interface is in Ukrainian. It was built for [EduProstir](http
 - **A full editor**: layers, move, rectangular selection, brush, pencil, eraser, magic eraser, paint bucket, gradient, 20+ shapes (rectangle, ellipse, star, polygon, Bézier curve…), text, clone stamp, crop, blur, sharpen, sponge, adjustments and filters.
 - **Familiar names, menus and keys**: the menu is arranged like the menus of common photo editors (Файл, Редагування, Зображення, Шар, Виділення, Фільтр, Перегляд, Довідка) and the usual keys work: V, M, B, I, E, G, U, T, S, C, O with Shift to cycle, `[` and `]` for the brush size, Ctrl+J, Ctrl+Shift+N, Ctrl+E, Ctrl+T, Ctrl+D, Ctrl+Alt+I, Ctrl+Z / Ctrl+Shift+Z and more. Keys are matched by the physical key, so they work with the Ukrainian layout. Help → «Гарячі клавіші» lists the keys of the open lesson.
 - **Closed tools stay closed**: a lesson opens some tools; the others are grey («Цей інструмент знадобиться пізніше») or not shown. The same rule guards the tool bar, the menu, the keyboard, the shape picker, drag and drop and paste. The original single-letter keys of miniPaint and internet features (image search, open URL) are off.
-- **Self-checking tasks**: conditions on layers (type, fill and outline colour, text, order, position, alignment, spacing), on pixels (a share of a colour in an area, where a colour spot is), on the canvas size, on the tools used and on the saved file format. Colours are checked by family («any green»), so every correct drawing passes.
+- **Self-checking tasks**: conditions on layers (type, fill and outline colour, gradient colours, text, order, position, alignment, spacing), on Bézier curves (length and bend), on pixels (a share of a colour in an area, where a colour spot is), on the canvas size, on the zoom, on the tools used, on the saved file format, and questions with a choice of answers on the task card. Colours are checked by family («any green»), so every correct drawing passes.
+- **Full screen** from the task card. In full screen the browser lets the trainer have Ctrl+N, Ctrl+T, Ctrl+W and Ctrl+J (Keyboard Lock in Chrome and Edge); in a window the browser keeps some of them.
 - **Ukrainian interface** and a calm graphite look with the EduProstir blue accent. No logos or icons of commercial editors.
 
 ## Lessons
 
 | Id | Passport | Task |
 |---|---|---|
+| `inf6-08-pixels` | inf6-08 | Zoom to 800 %: the photo turns into pixels, the vector star stays smooth |
+| `inf6-08-formats` | inf6-08 | Choose formats: SVG for the logo, JPG for the photo, a layered project; a photo saved as SVG is still raster |
 | `inf6-09-new-poster` | inf6-09 | New 800 × 600 document, fill it yellow |
 | `inf6-09-house-fill` | inf6-09 | Colour a line drawing with the paint bucket |
 | `inf6-09-grass-brush` | inf6-09 | Paint grass with the brush |
@@ -43,6 +46,8 @@ The student-facing interface is in Ukrainian. It was built for [EduProstir](http
 | `inf6-09-export-web` | inf6-09 | Export the poster as PNG or JPG, not as a layered project |
 | `inf6-10-star` | inf6-10 | A five-pointed star, yellow fill, orange outline |
 | `inf6-10-recolor` | inf6-10 | Recolour the same star (a vector shape keeps its settings) |
+| `inf6-10-sunset` | inf6-10 | A sky gradient from warm to blue, moved behind the mountain |
+| `inf6-10-rainbow` | inf6-10 | A rainbow arch drawn with the Bézier curve |
 | `inf6-11-sun-behind` | inf6-11 | Layer order: the sun goes behind the mountain |
 | `inf6-11-flowers-row` | inf6-11 | Align five flowers and space them evenly |
 | `inf6-11-title` | inf6-11 | A text with an outline above the flowers |
@@ -76,8 +81,12 @@ A lesson is an object in [`src/js/edu/lessons.js`](src/js/edu/lessons.js):
       { kind: 'fill', name: 'Тло', color: '#ffffff' },
     ],
   },
+  questions: [                           // optional: questions with a choice of answers on the task card
+    { id: 'logo', text: 'Який формат кращий для логотипа?', options: ['JPG', 'SVG', 'BMP'] },
+  ],
   checks: [
     { type: 'layers', match: { type: 'ellipse', stroke: 'red', min_stroke: 4 }, text: 'Контур еліпса червоний', hint: '…' },
+    { type: 'answer', question: 'logo', correct: 1, text: 'Для логотипа обрано SVG', hint: '…' },
   ],
 }
 ```
@@ -98,10 +107,13 @@ Tool names, shape names and menu targets are listed in [`policy.js`](src/js/edu/
 | `canvas` | The canvas is `width` × `height` |
 | `pixels` | A share `min_share` of `area` (default: the whole canvas) is painted in the colour `family` |
 | `pixels_center` | The pixels of the colour `family` have their centre in `area` |
+| `curve` | A finished Bézier curve (matching `match`) is at least `min_span` long and bends at least `min_bend`, `up` or `down` if `bend` is set |
+| `zoom` | The student zoomed to `min` or more at some moment of the task (1 is 100 %) |
+| `answer` | The option `correct` (from 0) is picked in the question `question` |
 | `used` | The student drew with the tool `name` |
 | `saved` | The last saved file has one of `formats` (`PNG`, `JPG`, `JSON`…) |
 
-`match` fields: `type` (one or a list), `name`, `fill`, `stroke` (a colour family, `none` or `any`), `min_stroke`, `text`, `corners`, `min_size`. Colour families: `red`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `brown`, `black`, `white`, `gray`.
+`match` fields: `type` (one or a list), `name`, `fill`, `stroke` (a colour family, a list of families, `none` or `any`), `min_stroke`, `text`, `corners`, `min_size`, `colors` (the two colours of a gradient, in any order, e.g. `[['yellow', 'orange'], 'blue']`). Colour families: `red`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `brown`, `black`, `white`, `gray`.
 
 ## Embedding
 

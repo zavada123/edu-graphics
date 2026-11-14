@@ -6,10 +6,13 @@
  *
  *   {
  *     width, height,                        // the canvas
- *     layers: [{ id, name, type, x, y, width, height, visible, index, fill, stroke, stroke_size, text, corners }],
+ *     layers: [{ id, name, type, x, y, width, height, visible, index, fill, stroke, stroke_size, text, corners,
+ *                colors, curve }],         // colors: the two colours of a gradient; curve: the points of a Bézier curve
  *     start: { layers: [...] },             // the same, at the start of the task
  *     journal: [{ kind, name, format }],    // tools used, commands run, files saved
- *     image: { width, height, data } | null // the flattened picture, RGBA
+ *     image: { width, height, data } | null,// the flattened picture, RGBA
+ *     zoom: { now, max },                   // the zoom now and the biggest one since the start (1 is 100 %)
+ *     answers: { [question id]: option index }
  *   }
  *
  * Every check has `text` (the line the student reads) and `hint` (shown while the condition is not met).
@@ -24,21 +27,31 @@ export const SHAPE_TYPES = ['rectangle', 'ellipse', 'star', 'polygon', 'triangle
 const norm = (s) => String(s).trim().replace(/\s+/g, ' ').toLocaleLowerCase('uk');
 
 /**
- * A colour rule: a family name ("green"), "none" (no fill / no outline) or "any" (some colour).
+ * A colour rule: a family name ("green"), a list of families (["yellow", "orange"]), "none" (no fill / no
+ * outline) or "any" (some colour).
  *
- * @param {string} rule
+ * @param {string | string[]} rule
  * @param {string | null} color
  */
 export function color_ok(rule, color) {
 	if (rule === 'none') return color === null;
-	if (color === null) return false;
-	return rule === 'any' || color_family(color) === rule;
+	if (color === null || color === undefined) return false;
+	if (rule === 'any') return true;
+	const families = Array.isArray(rule) ? rule : [rule];
+	return families.includes(color_family(color));
+}
+
+/** Two colours (of a gradient) match two rules, in any order. */
+export function colors_ok(rules, colors) {
+	if (!Array.isArray(colors) || colors.length < 2) return false;
+	const [a, b] = rules;
+	return (color_ok(a, colors[0]) && color_ok(b, colors[1])) || (color_ok(a, colors[1]) && color_ok(b, colors[0]));
 }
 
 /**
  * Does the layer match? Every field of `match` narrows the choice; `{}` matches every visible layer.
  *
- * match: { type: string | string[], name, fill, stroke, min_stroke, text, corners, min_size, visible }
+ * match: { type: string | string[], name, fill, stroke, min_stroke, text, corners, min_size, visible, colors }
  */
 export function layer_matches(layer, match) {
 	if (match.visible !== false && layer.visible === false) return false;
@@ -53,6 +66,7 @@ export function layer_matches(layer, match) {
 	if (match.text !== undefined && (layer.text === null || norm(layer.text) !== norm(match.text))) return false;
 	if (match.corners !== undefined && layer.corners !== match.corners) return false;
 	if (match.min_size !== undefined && Math.min(Math.abs(layer.width), Math.abs(layer.height)) < match.min_size) return false;
+	if (match.colors !== undefined && !colors_ok(match.colors, layer.colors)) return false;
 	return true;
 }
 
@@ -124,6 +138,23 @@ export function count_pixels(image, family, area) {
 		}
 	}
 	return { total, hits, sum_x, sum_y };
+}
+
+/**
+ * The shape of a cubic Bézier curve: `span` is the distance between its ends, `bend` how far the middle of the
+ * curve stands from the middle of that chord, `up` whether the middle is higher than the chord (y grows down).
+ *
+ * @param {{ start, cp1, cp2, end }} curve points as { x, y }
+ */
+export function curve_shape(curve) {
+	const { start, cp1, cp2, end } = curve;
+	const mid = { x: (start.x + 3 * cp1.x + 3 * cp2.x + end.x) / 8, y: (start.y + 3 * cp1.y + 3 * cp2.y + end.y) / 8 };
+	const chord = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+	return {
+		span: Math.hypot(end.x - start.x, end.y - start.y),
+		bend: Math.hypot(mid.x - chord.x, mid.y - chord.y),
+		up: mid.y < chord.y,
+	};
 }
 
 const whole = (snapshot) => ({ x: 0, y: 0, w: snapshot.width, h: snapshot.height });
@@ -203,6 +234,21 @@ function evaluate(check, snapshot) {
 			const last = saves[saves.length - 1];
 			return last !== undefined && check.formats.includes(last.format);
 		}
+		case 'curve': {
+			// A finished Bézier curve, long enough and bent enough (and to the side the task asks).
+			return find(snapshot, { type: 'bezier_curve', ...check.match }).some((l) => {
+				if (!l.curve) return false;
+				const c = curve_shape(l.curve);
+				if (c.span < (check.min_span ?? 0) || c.bend < (check.min_bend ?? 1)) return false;
+				return check.bend === 'up' ? c.up : check.bend === 'down' ? !c.up : true;
+			});
+		}
+		case 'zoom':
+			// The student looked at the picture this close (1 is 100 %), at some moment of the task.
+			return snapshot.zoom !== undefined && snapshot.zoom.max >= check.min;
+		case 'answer':
+			// The option the student picked in the question on the task card.
+			return snapshot.answers !== undefined && snapshot.answers[check.question] === check.correct;
 		default:
 			throw new Error('Unknown check: ' + check.type);
 	}
