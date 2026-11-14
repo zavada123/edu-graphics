@@ -1,0 +1,231 @@
+/* EduProstir: a calm graphite look with the blue accent of the other EduProstir trainers. */
+
+body.theme-dark {
+	--background: #3b4049;
+	--text-color: #eef0f3;
+	--text-color-muted: #b8bec8;
+	--text-color-red: #fca5a5;
+	--text-color-green: #86efac;
+	--text-color-blue: #93c5fd;
+	--link-color: #93c5fd;
+	--section-background-color: #22262c;
+	--area-background-color: #2c3139;
+	--block-background-color: #2c3139;
+	--header-background-color: #262a31;
+	--button-background-color: #353b44;
+	--button-background-color-hover: #4b5563;
+	--button-background-color-active: #3f4651;
+	--button-text-color-active: #bfdbfe;
+	--button-toggle-background-color: #4b5563;
+	--button-toggle-background-color-hover: #4b5563;
+	--input-background-color: #1d2126;
+	--input-background-color-hover: #2a2f36;
+	--input-text-color: #eef0f3;
+	--input-border-color: #111317;
+	--input-border-color-active: #3b82f6;
+	--input-group-border-color: #22262c;
+	--menu-background-color: #1b1e23;
+	--menu-text-color: #e5e7eb;
+	--menu-dropdown-hover-background-color: #2563eb;
+	--background-color-active: #2563eb;
+	--background-color-hover: #4b5563;
+	--text-color-active: #ffffff;
+	--border-color: #4b5563;
+	--scrollbar-track-color: #2c3139;
+	--scrollbar-thumb-color: #4b5563;
+	--edu-accent: #2563eb;
+	--edu-ok: #4ade80;
+	--edu-bad: #f87171;
+}
+
+/* The place of the old logo: the name of the trainer. */
+.submenu .logo {
+	width: auto;
+	padding: 6px 12px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+.submenu .logo::after {
+	display: none;
+}
+
+/* Tools and menu items the lesson opens later: visible, but grey. */
+#tools_container .item.edu-later {
+	opacity: 0.25;
+	filter: grayscale(1);
+	cursor: not-allowed;
+}
+#tools_container .item.edu-later:hover {
+	background-color: transparent;
+}
+.menu_dropdown li.edu-later > a {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+/* Wider panels, as in other editors; blocks keep their height and the side bar scrolls. */
+@media screen and (min-width: 701px) {
+	.sidebar_right {
+		width: 260px;
+	}
+}
+.sidebar_right .block {
+	flex-shrink: 0;
+}
+
+/* Messages ("Цей інструмент знадобиться пізніше") readable on the dark theme. */
+.alertify-notifier .ajs-message {
+	color: #fff;
+	background: #1f2937;
+	border: 1px solid #4b5563;
+	border-radius: 6px;
+	text-shadow: none;
+	font-size: 14px;
+}
+
+/* ── The task card ─────────────────────────────────────────── */
+
+.edu-task {
+	padding: 10px 10px 12px;
+	font-size: 1.35rem;
+	line-height: 1.4;
+	border-top: 3px solid var(--edu-accent);
+}
+
+.edu-pick select {
+	width: 100%;
+	margin-bottom: 8px;
+	padding: 5px 6px;
+	font: inherit;
+	color: var(--input-text-color);
+	background: var(--input-background-color);
+	border: 1px solid var(--input-border-color);
+	border-radius: var(--input-border-radius);
+}
+
+.edu-task-head {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+.edu-task-head h2 {
+	margin: 0;
+	padding: 0;
+	font-size: 1.6rem;
+	font-weight: 600;
+	background: none;
+	box-shadow: none;
+}
+.edu-fold {
+	padding: 0;
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	background: none;
+	border: 0;
+	cursor: pointer;
+}
+.edu-fold::after {
+	content: " ▾";
+	font-size: 1.1rem;
+	opacity: 0.7;
+}
+.edu-task.is-folded .edu-fold::after {
+	content: " ▸";
+}
+.edu-task.is-folded .edu-steps {
+	display: none;
+}
+.edu-grade {
+	padding: 1px 7px;
+	border-radius: 99px;
+	font-size: 1.15rem;
+	color: #bfdbfe;
+	background: rgba(37, 99, 235, 0.35);
+}
+
+.edu-steps {
+	margin: 8px 0 10px;
+	padding-left: 18px;
+	list-style: decimal;
+}
+.edu-steps li {
+	margin: 4px 0;
+}
+
+.edu-actions {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+.edu-actions button,
+.edu-next {
+	padding: 6px 12px;
+	font: inherit;
+	font-weight: 600;
+	color: var(--text-color);
+	background: var(--button-background-color);
+	border: 1px solid var(--border-color);
+	border-radius: var(--button-border-radius);
+	cursor: pointer;
+}
+.edu-actions .edu-check {
+	color: #fff;
+	background: var(--edu-accent);
+	border-color: var(--edu-accent);
+}
+.edu-actions button:hover,
+.edu-next:hover {
+	filter: brightness(1.12);
+}
+.edu-actions button:focus-visible,
+.edu-next:focus-visible {
+	outline: 2px solid #93c5fd;
+	outline-offset: 2px;
+}
+
+.edu-results:empty {
+	display: none;
+}
+.edu-results {
+	margin-top: 10px;
+	padding: 8px;
+	border-radius: 6px;
+	background: rgba(0, 0, 0, 0.18);
+}
+.edu-results.is-solved {
+	background: rgba(22, 163, 74, 0.22);
+}
+.edu-results-head {
+	margin: 0 0 6px;
+	font-weight: 600;
+}
+.edu-results ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.edu-results li {
+	margin: 5px 0;
+}
+.edu-results li small {
+	display: block;
+	margin: 2px 0 0 22px;
+	color: var(--text-color-muted);
+	font-size: 1.2rem;
+}
+.edu-next {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 100%;
+	margin-top: 8px;
+	color: #fff;
+	background: #16a34a;
+	border-color: #16a34a;
+}
+.edu-next small {
+	font-weight: 400;
+	opacity: 0.9;
+}

@@ -1,0 +1,21 @@
+# OS generated files #
+.DS_Store
+.DS_Store?
+._*
+.Trashes
+ehthumbs.db
+Thumbs.db
+nbproject/
+.idea/
+.git/
+.vscode
+/.project
+*.log
+
+/node_modules/
+*.js.ignore
+
+
+# EduProstir: the build and e2e screenshots are made by CI and npm scripts
+/dist/
+/test/e2e-*.png
