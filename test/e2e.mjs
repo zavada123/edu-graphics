@@ -97,9 +97,12 @@ lesson('inf6-09-new-poster', async () => {
 
 lesson('inf6-09-house-fill', async () => {
 	assert.equal(await tool(), 'fill');
+	// miniPaint takes the place of a click from the last mouse move: move first, as a hand does.
 	await page.evaluate(() => { window.AppConfig.COLOR = '#facc15'; });
+	await page.mouse.move(...(await at(410, 265)));
 	await page.mouse.click(...(await at(415, 270)));
 	await page.evaluate(() => { window.AppConfig.COLOR = '#ef4444'; });
+	await page.mouse.move(...(await at(395, 175)));
 	await page.mouse.click(...(await at(400, 180)));
 });
 
@@ -179,9 +182,67 @@ lesson('inf6-11-title', async () => {
 	await page.waitForTimeout(200);
 });
 
+// ── Vector mode (vector.html, SVG-Edit) ─────────────────────────────
+// open() goes to index.html: a vector lesson must move to vector.html by itself.
+
+/** Drawing point (in units of the drawing) → screen point. */
+const vat = async (x, y) => {
+	const box = await page.locator('#svgcontent').boundingBox();
+	const zoom = await page.evaluate(() => window.EduGraphics.editor.svgCanvas.getZoom());
+	return [box.x + x * zoom, box.y + y * zoom];
+};
+const vlayers = () => page.evaluate(() => window.EduGraphics.snapshot().layers);
+
+lesson('inf6-10-ball', async () => {
+	assert.ok(page.url().includes('vector.html'), 'a vector lesson opens in the vector editor');
+	await page.mouse.click(...(await vat(400, 300)));
+	await page.click('#fill_color');
+	await page.locator('#fill_color .jGraduate_tab_radgrad').click();
+	const stops = page.locator('#fill_color path[data-stop]');
+	const picker = page.locator('#fill_color [id$="_jGraduate_stopPicker"]');
+	for (const [i, color] of [[0, '#ffffffff'], [1, '#ff0000ff']]) {
+		const b = await stops.nth(i).boundingBox();
+		await page.mouse.dblclick(b.x + b.width / 2, b.y + b.height / 2);
+		await picker.locator(`.QuickColor[title="${color}"]`).click();
+		await picker.locator('input[type=button]').first().click();
+		await page.waitForTimeout(200);
+	}
+	await page.locator('#fill_color .jGraduate_OkCancel input').first().click();
+});
+
+lesson('inf6-10-drop', async () => {
+	const zoom = await page.evaluate(() => window.EduGraphics.editor.svgCanvas.getZoom());
+	const svg = await page.locator('#svgcontent').boundingBox();
+	await page.mouse.dblclick(...(await vat(400, 250)));
+	for (const [x, y, grips, dx, dy] of [[280, 340, 'ctrlpointgrip_2', 0, 90], [520, 340, 'ctrlpointgrip_1', 60, 0]]) {
+		await page.mouse.click(...(await vat(x, y)));
+		await page.locator('#seg_type select').selectOption('6');
+		await page.waitForTimeout(200);
+		const points = await page.evaluate((prefix) => [...document.querySelectorAll(`circle[id^="${prefix}"]`)]
+			.filter((g) => g.getAttribute('display') !== 'none').map((g) => [Number(g.getAttribute('cx')), Number(g.getAttribute('cy'))]), grips);
+		for (const [gx, gy] of points) await drag([svg.x + gx, svg.y + gy], [svg.x + gx + dx * zoom, svg.y + gy + dy * zoom]);
+	}
+});
+
+lesson('inf6-11-snowman', async () => {
+	await page.keyboard.press('Control+a');
+	await page.click('#tool_align_center');
+	await page.keyboard.press('Control+g');
+	const group = (await vlayers()).find((l) => l.type === 'group');
+	assert.ok(group, 'Ctrl+G makes a group');
+	const from = await vat(group.x + group.width / 2, group.y + group.height / 2);
+	await drag(from, await vat(group.x + group.width / 2 + 400, group.y + group.height / 2));
+});
+
+lesson('inf6-11-fence', async () => {
+	await page.keyboard.press('Control+a');
+	await page.click('#tool_align_bottom');
+	await page.click('#tool_align_distrib_horiz');
+});
+
 // ── Run ─────────────────────────────────────────────────────────────
 let failed = 0;
-for (const [id, steps] of Object.entries(lessons)) {
+for (const [id, steps] of Object.entries(lessons).filter(([id]) => !process.env.ONLY || process.env.ONLY.split(",").includes(id))) {
 	current = id;
 	try {
 		await open(id);
@@ -225,6 +286,23 @@ try {
 } catch (e) {
 	failed++;
 	console.log('FAIL closed tools', e.message.split('\n')[0]);
+}
+
+// The vector editor shows only the tools of the lesson; the keys of hidden tools do nothing.
+current = 'vector closed tools';
+try {
+	await open('inf6-11-snowman');
+	assert.equal(await page.locator('#tools_rect').isVisible(), false, 'no rectangle tool in this lesson');
+	assert.equal(await page.locator('#main_button').isVisible(), false, 'no file menu');
+	await page.keyboard.press('r');
+	assert.equal(await page.evaluate(() => window.EduGraphics.editor.svgCanvas.getMode()), 'select', 'R does not open a hidden tool');
+	await page.goto(`${base}vector.html?lesson=inf6-09-flowerbed`);
+	await page.waitForFunction(() => window.EduGraphics !== undefined);
+	assert.ok(!page.url().includes('vector.html'), 'a raster lesson goes back to the raster editor');
+	console.log('ok   vector closed tools and the way between the editors');
+} catch (e) {
+	failed++;
+	console.log('FAIL vector closed tools', e.message.split('\n')[0]);
 }
 
 if (errors.length > 0) console.log('page errors:', errors);

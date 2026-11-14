@@ -8,6 +8,7 @@
 <p align="center">
   <a href="https://zavada123.github.io/edu-graphics/"><b>Live demo</b></a> ·
   <a href="#lessons">Lessons</a> ·
+  <a href="#vector-mode">Vector mode</a> ·
   <a href="#lesson-manifest">Lesson manifest</a> ·
   <a href="#embedding">Embedding</a> ·
   <a href="#development">Development</a>
@@ -30,6 +31,7 @@ The student-facing interface is in Ukrainian. It was built for [EduProstir](http
 - **Closed tools stay closed**: a lesson opens some tools; the others are grey («Цей інструмент знадобиться пізніше») or not shown. The same rule guards the tool bar, the menu, the keyboard, the shape picker, drag and drop and paste. The original single-letter keys of miniPaint and internet features (image search, open URL) are off.
 - **Self-checking tasks**: conditions on layers (type, fill and outline colour, gradient colours, text, order, position, alignment, spacing), on Bézier curves (length and bend), on pixels (a share of a colour in an area, where a colour spot is), on the canvas size, on the zoom, on the tools used, on the saved file format, and questions with a choice of answers on the task card. Colours are checked by family («any green»), so every correct drawing passes.
 - **Full screen** from the task card. In full screen the browser lets the trainer have Ctrl+N, Ctrl+T, Ctrl+W and Ctrl+J (Keyboard Lock in Chrome and Edge); in a window the browser keeps some of them.
+- **Vector mode** on [SVG-Edit](https://github.com/SVG-Edit/svgedit) (MIT) for the vector topics: groups, path nodes and curves, align and distribute, gradients on shapes. Same task card, checks and messages; see [Vector mode](#vector-mode).
 - **Ukrainian interface** and a calm graphite look with the EduProstir blue accent. No logos or icons of commercial editors.
 
 ## Lessons
@@ -51,9 +53,30 @@ The student-facing interface is in Ukrainian. It was built for [EduProstir](http
 | `inf6-11-sun-behind` | inf6-11 | Layer order: the sun goes behind the mountain |
 | `inf6-11-flowers-row` | inf6-11 | Align five flowers and space them evenly |
 | `inf6-11-title` | inf6-11 | A text with an outline above the flowers |
+| `inf6-10-ball` | inf6-10 | Vector: a radial gradient makes a flat ball round |
+| `inf6-10-drop` | inf6-10 | Vector: path nodes, curved segments, a drop out of a triangle |
+| `inf6-11-snowman` | inf6-11 | Vector: align three balls, group them (Ctrl+G), move the group |
+| `inf6-11-fence` | inf6-11 | Vector: align the bottoms and distribute five planks with buttons |
 | `free` | | Free drawing, every tool open |
 
-Open a lesson with `?lesson=<id>`, for example [`?lesson=inf6-09-house-fill`](https://zavada123.github.io/edu-graphics/?lesson=inf6-09-house-fill).
+Open a lesson with `?lesson=<id>`, for example [`?lesson=inf6-09-house-fill`](https://zavada123.github.io/edu-graphics/?lesson=inf6-09-house-fill). A vector lesson opened on `index.html` moves to `vector.html` by itself (and back), so one address works for every lesson.
+
+## Vector mode
+
+`vector.html` runs the lessons of [`src/js/vector/lessons.js`](src/js/vector/lessons.js) in SVG-Edit 7. The build copies the ready editor from the `svgedit` npm package to `svgedit/` ([`scripts/svgedit.mjs`](scripts/svgedit.mjs)); `dist/vector.js` loads it as a module and adds the task card, the checks and the messages of the raster editor.
+
+- The start is an SVG drawing. The background sits on its own layer, so «Виділити все» (Ctrl+A) takes only the shapes of the task. A shape gets its name from `<title>`.
+- `manifest.tools` lists the tools of the left bar that the lesson shows (`select`, `zoom`, `path`, `rect`, `ellipse`, `text`…); the others, the file menu, the SVG source and links are hidden, and their keys do nothing.
+- Ctrl+G and Ctrl+Shift+G group and ungroup, as in other vector editors. Some Ukrainian texts of SVG-Edit are corrected, and the distribute buttons get names ([`uk.js`](src/js/vector/uk.js)).
+- The snapshot of the checks reads the drawing: type, name, box, fill, outline, the two colours and the kind of a gradient, the curved segments of a path and the groups around a shape.
+
+Extra checks and `match` fields of the vector mode:
+
+| | |
+|---|---|
+| `{ type: 'group', members, min, max }` | A group (any `match`) holds `min`..`max` shapes like `members`, at any depth |
+| `match.gradient` | `'linear'` or `'radial'` |
+| `match.min_curves` | A path has at least this many visibly bent segments (a «curve» with its handles on the line does not count) |
 
 ## Lesson manifest
 
@@ -117,7 +140,7 @@ Tool names, shape names and menu targets are listed in [`policy.js`](src/js/edu/
 
 ## Embedding
 
-Put the built site (`index.html`, `dist/`, `images/`) on your server and show it in an iframe:
+Put the built site (`index.html`, `vector.html`, `dist/`, `images/`, `svgedit/`, `components/`) on your server and show it in an iframe:
 
 ```html
 <iframe src="/graphics/?lesson=inf6-09-flowerbed&embed=1" allow="fullscreen" style="width:100%;height:720px;border:0"></iframe>
@@ -135,19 +158,29 @@ window.addEventListener('message', (event) => {
 
 The checks run in the browser. Server-side grading of the action log is planned for the integration stage.
 
+### As a package
+
+`lib/` holds the built trainer, so a site can install the package without building it. Every dependency is a build dependency (`devDependencies`), so the install fetches nothing else:
+
+```bash
+pnpm add github:zavada123/edu-graphics#<commit>
+```
+
+Serve `node_modules/edu-graphics/lib/` as a folder of your site (for example `/graphics-app/`) and open `/graphics-app/?lesson=<id>&embed=1` in an iframe (or `vector.html?…` for a vector lesson, to skip one redirect). `edu-graphics/lessons.json` lists the lessons of both editors (`id`, `passport`, `grade`, `editor`, `title`, `task`) for a catalog page. After a change of the trainer run `npm run lib` and commit `lib/`.
+
 ## Development
 
 ```bash
 npm ci
 npm test          # unit tests of the trainer logic (Node test runner)
-npm run build     # webpack → dist/bundle.js; open index.html through any static server
+npm run build     # SVG-Edit → svgedit/, webpack → dist/bundle.js and dist/vector.js; open index.html through any static server
 npm run e2e       # every lesson in a real browser (needs Playwright with Chromium)
 ```
 
-The trainer code is in [`src/js/edu/`](src/js/edu). Changes to the miniPaint files are small and marked with `EduProstir:` comments: `main.js`, `actions/activate-tool.js`, `core/base-gui.js`, `core/gui/gui-menu.js`, `tools/shape.js`, `modules/file/save.js`, `modules/help/*.js`. The Ukrainian dictionary is `src/js/languages/uk.json` (the British English one moved to `en-gb.json`).
+The trainer code is in [`src/js/edu/`](src/js/edu). Changes to the miniPaint files are small and marked with `EduProstir:` comments: `main.js`, `actions/activate-tool.js`, `core/base-gui.js`, `core/gui/gui-menu.js`, `tools/shape.js`, `tools/fill.js` (fills run one after another), `modules/file/save.js`, `modules/help/*.js`. The Ukrainian dictionary is `src/js/languages/uk.json` (the British English one moved to `en-gb.json`).
 
 Every push to `main` runs the tests and deploys the demo to GitHub Pages.
 
 ## License
 
-[MIT](LICENSE). Based on [miniPaint](https://github.com/viliusle/miniPaint) by ViliusL, MIT licence ([MIT-LICENSE.txt](MIT-LICENSE.txt)). This project is not affiliated with Adobe or any other maker of photo editors.
+[MIT](LICENSE). Based on [miniPaint](https://github.com/viliusle/miniPaint) by ViliusL, MIT licence ([MIT-LICENSE.txt](MIT-LICENSE.txt)). The vector mode uses [SVG-Edit](https://github.com/SVG-Edit/svgedit), MIT licence (copied with the build to `svgedit/LICENSE-MIT.txt`). This project is not affiliated with Adobe or any other maker of photo editors.

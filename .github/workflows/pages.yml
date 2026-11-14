@@ -27,10 +27,12 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: lib/lessons.json matches the lessons
+        run: node --no-warnings scripts/lib.mjs && git diff --exit-code lib/lessons.json
       - name: Collect the site
         run: |
           mkdir -p _site
-          cp -r index.html dist images _site/
+          cp -r index.html vector.html dist images svgedit components _site/
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:

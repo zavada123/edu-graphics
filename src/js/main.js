@@ -54,7 +54,7 @@ window.addEventListener('load', async function (e) {
 	window.FileSave = File_save;
 
 	// Render all
-	Edu.prepare();
+	if (!Edu.prepare()) return;
 	GUI.init();
 	await Layers.init();
 	await Edu.start();

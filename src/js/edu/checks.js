@@ -8,6 +8,8 @@
  *     width, height,                        // the canvas
  *     layers: [{ id, name, type, x, y, width, height, visible, index, fill, stroke, stroke_size, text, corners,
  *                colors, curve }],         // colors: the two colours of a gradient; curve: the points of a Bézier curve
+ *                                          // the vector editor adds: gradient ('linear' | 'radial' | null),
+ *                                          // curves (curved segments of a path), groups (ids of the groups around)
  *     start: { layers: [...] },             // the same, at the start of the task
  *     journal: [{ kind, name, format }],    // tools used, commands run, files saved
  *     image: { width, height, data } | null,// the flattened picture, RGBA
@@ -51,7 +53,8 @@ export function colors_ok(rules, colors) {
 /**
  * Does the layer match? Every field of `match` narrows the choice; `{}` matches every visible layer.
  *
- * match: { type: string | string[], name, fill, stroke, min_stroke, text, corners, min_size, visible, colors }
+ * match: { type: string | string[], name, fill, stroke, min_stroke, text, corners, min_size, visible, colors,
+ *          gradient, min_curves }
  */
 export function layer_matches(layer, match) {
 	if (match.visible !== false && layer.visible === false) return false;
@@ -67,6 +70,8 @@ export function layer_matches(layer, match) {
 	if (match.corners !== undefined && layer.corners !== match.corners) return false;
 	if (match.min_size !== undefined && Math.min(Math.abs(layer.width), Math.abs(layer.height)) < match.min_size) return false;
 	if (match.colors !== undefined && !colors_ok(match.colors, layer.colors)) return false;
+	if (match.gradient !== undefined && layer.gradient !== match.gradient) return false;
+	if (match.min_curves !== undefined && (layer.curves ?? 0) < match.min_curves) return false;
 	return true;
 }
 
@@ -241,6 +246,13 @@ function evaluate(check, snapshot) {
 				const c = curve_shape(l.curve);
 				if (c.span < (check.min_span ?? 0) || c.bend < (check.min_bend ?? 1)) return false;
 				return check.bend === 'up' ? c.up : check.bend === 'down' ? !c.up : true;
+			});
+		}
+		case 'group': {
+			// A group (of the vector editor) with `min`..`max` shapes like `members` inside, at any depth.
+			return find(snapshot, { ...check.match, type: 'group' }).some((g) => {
+				const n = snapshot.layers.filter((l) => (l.groups ?? []).includes(g.id) && layer_matches(l, check.members ?? {})).length;
+				return n >= (check.min ?? 2) && (check.max === undefined || n <= check.max);
 			});
 		}
 		case 'zoom':

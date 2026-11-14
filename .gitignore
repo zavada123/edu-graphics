@@ -19,3 +19,6 @@ nbproject/
 # EduProstir: the build and e2e screenshots are made by CI and npm scripts
 /dist/
 /test/e2e-*.png
+/svgedit/
+/images/eye.svg
+/components/
