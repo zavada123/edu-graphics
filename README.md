@@ -160,7 +160,7 @@ The checks run in the browser. Server-side grading of the action log is planned 
 
 ### As a package
 
-`lib/` holds the built trainer, so a site can install the package without building it:
+`lib/` holds the built trainer, so a site can install the package without building it. Every dependency is a build dependency (`devDependencies`), so the install fetches nothing else:
 
 ```bash
 pnpm add github:zavada123/edu-graphics#<commit>
