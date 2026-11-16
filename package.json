@@ -28,7 +28,7 @@
 		"css-loader": "^5.2.6",
 		"exif-js": "^2.3.0",
 		"file-saver": "^2.0.5",
-		"fuzzysort": "^1.1.4",
+		"fuzzysort": "^4.0.2",
 		"gif.js.optimized": "^1.0.1",
 		"hermite-resize": "git+https://github.com/viliusle/Hermite-resize.git",
 		"jquery": "^3.5.1",
