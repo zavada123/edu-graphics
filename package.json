@@ -34,7 +34,7 @@
 		"jquery": "^3.5.1",
 		"pica": "^7.0.0",
 		"semver-compare": "^1.0.0",
-		"source-map-loader": "^3.0.0",
+		"source-map-loader": "^5.0.0",
 		"style-loader": "^2.0.0",
 		"svgedit": "7.4.2",
 		"uuid": "^8.3.2",
