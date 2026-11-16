@@ -39,8 +39,8 @@
 		"svgedit": "7.4.2",
 		"uuid": "^8.3.2",
 		"webfontloader": "^1.6.28",
-		"webpack": "^5.106.2",
-		"webpack-cli": "^7.0.2",
+		"webpack": "^5.112.2",
+		"webpack-cli": "^7.3.1",
 		"webpack-dev-server": "^5.2.3"
 	},
 	"contributors": [
