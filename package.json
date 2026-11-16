@@ -31,7 +31,7 @@
 		"fuzzysort": "^1.1.4",
 		"gif.js.optimized": "^1.0.1",
 		"hermite-resize": "git+https://github.com/viliusle/Hermite-resize.git",
-		"jquery": "^3.5.1",
+		"jquery": "^4.0.0",
 		"pica": "^7.0.0",
 		"semver-compare": "^1.0.0",
 		"source-map-loader": "^3.0.0",
