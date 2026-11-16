@@ -41,7 +41,7 @@
 		"webfontloader": "^1.6.28",
 		"webpack": "^5.112.2",
 		"webpack-cli": "^7.3.1",
-		"webpack-dev-server": "^5.2.3"
+		"webpack-dev-server": "^5.2.7"
 	},
 	"contributors": [
 		"Vilius L. (miniPaint, https://github.com/viliusle/miniPaint)"
