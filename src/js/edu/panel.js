@@ -20,13 +20,12 @@ export function mount_panel(host, opts) {
 	const picker = opts.embedded ? '' : `
 		<label class="edu-pick">
 			<span class="sr_only">Завдання</span>
-			<select>${opts.lessons.map((l) => `<option value="${esc(l.id)}"${l.id === lesson.id ? ' selected' : ''}>${esc(l.grade > 0 ? l.grade + ' клас · ' : '')}${esc(l.title)}</option>`).join('')}</select>
+			<select>${opts.lessons.map((l) => `<option value="${esc(l.id)}"${l.id === lesson.id ? ' selected' : ''}>${esc(l.title)}</option>`).join('')}</select>
 		</label>`;
 
 	root.innerHTML = `
 		${picker}
 		<div class="edu-task-head">
-			${lesson.grade > 0 ? `<span class="edu-grade">${lesson.grade} клас</span>` : ''}
 			<h2><button type="button" class="edu-fold" aria-expanded="true" title="Згорнути або розгорнути завдання">${esc(lesson.title)}</button></h2>
 		</div>
 		<ol class="edu-steps">${lesson.task.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
