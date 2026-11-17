@@ -137,13 +137,6 @@ body.theme-dark {
 .edu-task.is-folded .edu-steps {
 	display: none;
 }
-.edu-grade {
-	padding: 1px 7px;
-	border-radius: 99px;
-	font-size: 1.15rem;
-	color: #bfdbfe;
-	background: rgba(37, 99, 235, 0.35);
-}
 
 .edu-steps {
 	margin: 8px 0 10px;
