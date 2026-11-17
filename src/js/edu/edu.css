@@ -245,3 +245,18 @@ body.theme-dark {
 	margin-top: 3px;
 	accent-color: var(--edu-accent);
 }
+
+/* Marked task and hint texts (rich-text.css) on the dark task card. */
+.edu-task {
+	--rt-accent: #fcd34d;
+	--rt-code-bg: rgba(255, 255, 255, 0.1);
+	--rt-key-bg: #353b44;
+	--rt-key-line: #6b7280;
+	--rt-key-text: #eef0f3;
+	--rt-red: #fca5a5;
+	--rt-green: #86efac;
+	--rt-blue: #93c5fd;
+	--rt-yellow: #fde047;
+	--rt-orange: #fdba74;
+	--rt-purple: #d8b4fe;
+}

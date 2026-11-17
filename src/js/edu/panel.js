@@ -3,6 +3,9 @@
  * «Перевірити», the result of each condition with a hint, «Наступне завдання» and «На весь екран».
  */
 
+import { rich_html } from './rich-text.js';
+import './rich-text.css';
+
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' })[c]);
 
 /**
@@ -28,11 +31,11 @@ export function mount_panel(host, opts) {
 		<div class="edu-task-head">
 			<h2><button type="button" class="edu-fold" aria-expanded="true" title="Згорнути або розгорнути завдання">${esc(lesson.title)}</button></h2>
 		</div>
-		<ol class="edu-steps">${lesson.task.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>
+		<ol class="edu-steps">${lesson.task.map((t) => `<li>${rich_html(t)}</li>`).join('')}</ol>
 		${(lesson.questions ?? []).map((q) => `
 			<fieldset class="edu-question" data-question="${esc(q.id)}">
-				<legend>${esc(q.text)}</legend>
-				${q.options.map((o, i) => `<label><input type="radio" name="edu_q_${esc(q.id)}" value="${i}"> <span>${esc(o)}</span></label>`).join('')}
+				<legend>${rich_html(q.text)}</legend>
+				${q.options.map((o, i) => `<label><input type="radio" name="edu_q_${esc(q.id)}" value="${i}"> <span>${rich_html(o)}</span></label>`).join('')}
 			</fieldset>`).join('')}
 		<div class="edu-actions">
 			${lesson.free ? '' : '<button type="button" class="edu-check">Перевірити</button>'}
@@ -82,8 +85,8 @@ export function mount_panel(host, opts) {
 			<p class="edu-results-head">${solved ? '🎉 Молодець! Усе виконано.' : `Виконано ${done} з ${results.length}`}</p>
 			<ul>${results.map((r) => `
 				<li class="${r.ok ? 'is-ok' : 'is-bad'}">
-					<span aria-hidden="true">${r.ok ? '✅' : '❌'}</span> ${esc(r.text)}
-					${r.ok ? '' : `<small>${esc(r.hint)}</small>`}
+					<span aria-hidden="true">${r.ok ? '✅' : '❌'}</span> ${rich_html(r.text)}
+					${r.ok ? '' : `<small>${rich_html(r.hint)}</small>`}
 				</li>`).join('')}
 			</ul>
 			${solved && opts.next ? `<button type="button" class="edu-next"><span>Наступне завдання →</span><small>${esc(opts.next.title)}</small></button>` : ''}`;
