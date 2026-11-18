@@ -259,4 +259,6 @@ body.theme-dark {
 	--rt-yellow: #fde047;
 	--rt-orange: #fdba74;
 	--rt-purple: #d8b4fe;
+	--rt-name: #fef3c7;
+	--rt-name-bg: rgba(250, 204, 21, 0.22);
 }
